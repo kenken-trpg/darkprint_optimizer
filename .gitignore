@@ -22,3 +22,7 @@ screenshot.png
 
 # 学習済みモデル（deepseek/train_rf.py で再生成可能）
 *.pkl
+
+# 変換結果（darkprint.py / app.py の出力）
+*_print.png
+darkprint.zip

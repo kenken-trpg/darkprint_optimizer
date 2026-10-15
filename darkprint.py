@@ -26,7 +26,7 @@ class Options:
     grayscale: bool = False       # 色を捨てて白黒にする
     chroma: float = 1.0           # 文字色の彩度倍率（0 で白黒相当）
     bg_margin: float = 3.0        # 背景明度からこの幅だけ暗い所まで純白に寄せる
-    force: bool = False           # ダークモード判定を無視して常に変換
+    force: bool = False           # ダークモード判定を無視して反転（誤判定時用）
 
 
 @dataclass
@@ -96,7 +96,8 @@ def invert_lightness(lab: np.ndarray, bg_l: float, opt: Options) -> np.ndarray:
     out = lab.copy()
     L = 100 - lab[..., 0]
     paper = 100 - bg_l                       # 反転後の背景明度
-    black = float(np.percentile(L, 0.5))
+    # 文字が少ない画面では下位 0.5% が背景になり得るので、黒点に上限を設ける
+    black = min(float(np.percentile(L, 0.5)), 30.0)
     span = max(paper - opt.bg_margin - black, 1.0)
     L = np.clip((L - black) / span, 0, 1) * 100
     out[..., 0] = L
@@ -143,7 +144,7 @@ def main() -> None:
     ap.add_argument("-o", "--outdir", type=Path, help="出力先（省略時は入力と同じ場所）")
     ap.add_argument("--gray", action="store_true", help="白黒で出力")
     ap.add_argument("--no-protect", action="store_true", help="画像領域も反転する")
-    ap.add_argument("--force", action="store_true", help="ライトモード画像も変換する")
+    ap.add_argument("--force", action="store_true", help="ダークモード判定を無視して反転する（誤判定時用。白背景の画像に使うと黒背景になる）")
     args = ap.parse_args()
 
     opt = Options(protect_photos=not args.no_protect, grayscale=args.gray, force=args.force)

@@ -22,10 +22,9 @@ st.sidebar.header("変換設定")
 protect = st.sidebar.toggle("🖼️ 写真・アイコンを反転しない", value=True)
 grayscale = st.sidebar.toggle("⚫ 白黒で出力", value=False)
 chroma = st.sidebar.slider("文字色の鮮やかさ", 0.0, 1.5, 1.0, 0.1, disabled=grayscale)
-force = st.sidebar.toggle("ライトモード画像も変換する", value=False)
+force = st.sidebar.toggle("判定に関わらず反転する", value=False,
+                          help="ダークモードなのにスキップされた画像用。白背景の画像に使うと黒背景になります")
 show_mask = st.sidebar.toggle("保護した領域を表示", value=False)
-
-opt = Options(protect_photos=protect, grayscale=grayscale, chroma=chroma, force=force)
 
 
 def to_rgb(bgr: np.ndarray) -> np.ndarray:
@@ -34,6 +33,16 @@ def to_rgb(bgr: np.ndarray) -> np.ndarray:
 
 def encode_png(bgr: np.ndarray) -> bytes:
     return cv2.imencode(".png", bgr)[1].tobytes()
+
+
+@st.cache_data(max_entries=64, show_spinner="変換中…")
+def process(data: bytes, protect: bool, grayscale: bool, chroma: float, force: bool):
+    """設定変更やダウンロードのたびに再変換しないようキャッシュする。"""
+    bgr = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+    if bgr is None:
+        return None
+    opt = Options(protect_photos=protect, grayscale=grayscale, chroma=chroma, force=force)
+    return bgr, convert(bgr, opt)
 
 
 # ==================== 本体 ====================
@@ -46,15 +55,16 @@ if not files:
 
 outputs: list[tuple[str, bytes]] = []
 for f in files:
-    bgr = cv2.imdecode(np.frombuffer(f.getvalue(), np.uint8), cv2.IMREAD_COLOR)
-    if bgr is None:
+    processed = process(f.getvalue(), protect, grayscale, chroma, force)
+    if processed is None:
         st.error(f"読み込めません: {f.name}")
         continue
-    res = convert(bgr, opt)
+    bgr, res = processed
 
     st.subheader(f.name)
     if not (res.is_dark or force):
-        st.warning("ライトモードの画像と判定したため変換していません")
+        st.warning("ライトモードの画像と判定したため変換していません"
+                   "（ダークモードの画像なら「判定に関わらず反転する」をオンに）")
         continue
 
     shown = res.image.copy()

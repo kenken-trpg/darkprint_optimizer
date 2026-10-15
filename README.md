@@ -32,7 +32,7 @@ streamlit run app.py
 | 写真・アイコンを反転しない | 画像領域を検出して元のまま残す（既定: オン） |
 | 白黒で出力 | グレースケールで出力 |
 | 文字色の鮮やかさ | 色付き文字の彩度倍率（0 で白黒相当） |
-| ライトモード画像も変換する | ダークモード判定を無視して変換 |
+| 判定に関わらず反転する | ダークモードなのに誤ってスキップされた画像用。白背景の画像に使うと黒背景になるので注意 |
 | 保護した領域を表示 | 画像として保護した範囲を赤くハイライト（確認用） |
 
 ### コマンドライン
@@ -42,7 +42,7 @@ python darkprint.py screenshot.png                 # → screenshot_print.png
 python darkprint.py *.png -o out/                  # まとめて out/ に出力
 python darkprint.py screenshot.png --gray          # 白黒で出力
 python darkprint.py screenshot.png --no-protect    # 画像領域も反転
-python darkprint.py screenshot.png --force         # ライトモード画像も変換
+python darkprint.py screenshot.png --force         # 判定を無視して反転（ダークなのにスキップされた時用）
 ```
 
 実行時に、変換前後のインク使用量の目安（平均の暗さ）と、保護した画像領域の割合を表示します。
@@ -71,7 +71,7 @@ cv2.imwrite("out.png", res.image)
 |---|---|
 | `darkprint.py` | 変換処理の本体と CLI |
 | `app.py` | Streamlit UI |
-| `legacy/` | 以前の実装（各種 AI に生成させた比較用の試作。メンテナンス対象外） |
+| `legacy/` | 以前の実装（各種 AI に生成させた比較用の試作。メンテナンス対象外。依存は `legacy/requirements.txt`） |
 
 ## ライセンス
 
