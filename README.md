@@ -71,7 +71,6 @@ cv2.imwrite("out.png", res.image)
 |---|---|
 | `darkprint.py` | 変換処理の本体と CLI |
 | `app.py` | Streamlit UI |
-| `legacy/` | 以前の実装（各種 AI に生成させた比較用の試作。メンテナンス対象外。依存は `legacy/requirements.txt`） |
 
 ## ライセンス
 
