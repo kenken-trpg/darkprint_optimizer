@@ -8,11 +8,12 @@
   4. 写真・アイコンなどの画像領域は反転せず元のまま残す
 
 CLI:
-  python darkprint.py input.png [input2.png ...] [-o OUTDIR] [--gray] [--no-protect]
+  python darkprint.py input.png [input2.png ...] [-o OUTDIR] [--gray] [--no-protect] [--force]
 """
 from __future__ import annotations
 
 import argparse
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -136,6 +137,16 @@ def ink_coverage(bgr: np.ndarray) -> float:
     return float((255 - bgr.astype(np.float32)).mean() / 255 * 100)
 
 
+def output_name(stem: str, used: set[str]) -> str:
+    """出力ファイル名を返す。同じ名前が既に使われていれば _2, _3 … を付ける。"""
+    name, n = f"{stem}_print.png", 1
+    while name in used:
+        n += 1
+        name = f"{stem}_print_{n}.png"
+    used.add(name)
+    return name
+
+
 # ==================== CLI ====================
 
 def main() -> None:
@@ -148,10 +159,13 @@ def main() -> None:
     args = ap.parse_args()
 
     opt = Options(protect_photos=not args.no_protect, grayscale=args.gray, force=args.force)
+    used: dict[Path, set[str]] = {}       # 出力先ごとに今回書いたファイル名
+    failed = False
     for src in args.inputs:
-        bgr = cv2.imread(str(src))
+        bgr = cv2.imread(str(src)) if src.is_file() else None
         if bgr is None:
-            print(f"読み込めません: {src}")
+            print(f"読み込めません: {src}", file=sys.stderr)
+            failed = True
             continue
         res = convert(bgr, opt)
         if not (res.is_dark or opt.force):
@@ -159,10 +173,12 @@ def main() -> None:
             continue
         outdir = args.outdir or src.parent
         outdir.mkdir(parents=True, exist_ok=True)
-        dst = outdir / f"{src.stem}_print.png"
+        dst = outdir / output_name(src.stem, used.setdefault(outdir.resolve(), set()))
         cv2.imwrite(str(dst), res.image)
         print(f"{src} -> {dst}  インク {ink_coverage(bgr):.1f}% -> {ink_coverage(res.image):.1f}%"
               f"  画像保護 {res.photo_mask.mean() * 100:.1f}%")
+    if failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

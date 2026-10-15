@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import streamlit as st
 
-from darkprint import Options, convert, ink_coverage
+from darkprint import Options, convert, ink_coverage, output_name
 
 st.set_page_config(page_title="DarkPrint Optimizer", page_icon="🖨️", layout="wide")
 st.title("🖨️ DarkPrint Optimizer")
@@ -54,6 +54,7 @@ if not files:
     st.stop()
 
 outputs: list[tuple[str, bytes]] = []
+used_names: set[str] = set()
 for f in files:
     processed = process(f.getvalue(), protect, grayscale, chroma, force)
     if processed is None:
@@ -77,7 +78,7 @@ for f in files:
     st.caption(f"インク使用量の目安: {ink_coverage(bgr):.1f}% → {ink_coverage(res.image):.1f}%"
                f"　／　画像保護: {res.photo_mask.mean() * 100:.1f}%")
 
-    name = f"{Path(f.name).stem}_print.png"
+    name = output_name(Path(f.name).stem, used_names)
     data = encode_png(res.image)
     outputs.append((name, data))
     st.download_button("💾 ダウンロード", data, name, "image/png", key=f"dl-{f.file_id}")
