@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.streamlit/secrets.toml
+
+# Rust (ChatGPT/ WASM app)
+target/
+
+# 変換結果（生成物）
+converted_images/
+*_inverted.png
+*_inverted.jpg
+print_ready.png
+
+# テスト入力画像
+screenshot.png
+
+# 学習済みモデル（deepseek/train_rf.py で再生成可能）
+*.pkl
